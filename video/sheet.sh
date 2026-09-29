@@ -1,6 +1,6 @@
 #!/bin/bash
 # usage: sheet.sh NAME t1 t2 ...  -> renders stills and a contact sheet into the scratchpad
-S=/tmp/claude-0/-home-user-claude/292b36e2-075c-5c6d-a7c3-5489be30e5ac/scratchpad/stills
+S=${OUT:-/tmp/claude-0/-home-user-claude/79a4ee62-ea4e-436e-a828-605ac2f1b2d2/scratchpad/stills}
 FF=$(python3 -c "import imageio_ffmpeg as i;print(i.get_ffmpeg_exe())")
 N=$1; shift
 OUT=$S node stills.mjs "$@" >/dev/null

@@ -206,12 +206,12 @@ CHORDS = [  # (start, end, pad notes, bass root)
     (0.0, 4.0, [53, 57, 60, 64], 41),        # Fmaj7
     (4.0, 8.0, [57, 60, 64, 67], 45),        # Am7
     (8.0, 12.0, [50, 53, 57, 60, 64], 38),   # Dm9
-    (12.0, 16.0, [46, 50, 53, 57], 34),      # Bbmaj7
-    (16.0, 16.9, [48, 52, 55, 62], 36),      # Cadd9 (build)
-    (17.0, 20.0, [53, 57, 60, 64, 67], 41),  # Fmaj9 (resolve)
+    (12.0, 15.3, [46, 50, 53, 57], 34),      # Bbmaj7
+    (15.3, 16.12, [48, 52, 55, 62], 36),     # Cadd9 (build)
+    (16.22, 20.0, [53, 57, 60, 64, 67], 41), # Fmaj9 (resolve on logo)
 ]
 for (a, b, notes, root) in CHORDS:
-    bright = 1400 if a < 3 else (3200 if a >= 17 else 2400)
+    bright = 1400 if a < 3 else (3200 if a >= 16 else 2400)
     pl, pr = pad_chord([n for n in notes], b - a + 0.6, bright)
     add(L, pl, a); add(Rr, pr, a); add(revL, pl * 0.5, a); add(revR, pr * 0.5, a)
 
@@ -219,13 +219,13 @@ for (a, b, notes, root) in CHORDS:
 for i in range(int(DUR / BEAT * 4)):             # 16th grid
     t = i * BEAT / 4
     beat_pos = i % 4; beat = i // 4
-    if 16.9 <= t < 17.0 or t >= 19.5:
+    if 16.12 <= t < 16.22 or t >= 19.5:
         continue
     if t < 1.0:
         continue
-    in_final = t >= 17.0
+    in_final = t >= 16.22
     # kick
-    if beat_pos == 0 and (t < 3.0 and beat % 2 == 0 or 3.0 <= t < 16.9 or in_final and t < 19.0 and beat % 2 == 0):
+    if beat_pos == 0 and (t < 3.0 and beat % 2 == 0 or 3.0 <= t < 16.12 or in_final and t < 19.0 and beat % 2 == 0):
         k = kick(0.95)
         put(k, t, 1.0, 0, 0.02)
         add(duck_src, np.exp(-np.arange(int(0.3 * SR)) / SR * 12), t)
@@ -238,16 +238,16 @@ for i in range(int(DUR / BEAT * 4)):             # 16th grid
     # clap on 2 & 4
     if t >= 3.0 and not in_final and beat_pos == 0 and beat % 2 == 1:
         put(clap(), t, 0.5, 0.05, 0.45)
-# snare roll build 16.0 -> 16.9
+# snare roll build 15.3 -> 16.12
 for i in range(18):
-    t = 16.0 + i * (0.9 / 18)
+    t = 15.3 + i * (0.82 / 18)
     put(clap(), t, 0.12 + 0.3 * i / 18, 0.0, 0.3)
 
 # bass: 8th-note pulses from 3 s
 for (a, b, notes, root) in CHORDS:
     t = max(a, 3.0)
     while t < b - 1e-6:
-        if 16.9 <= t < 17.0 or t >= 19.0:
+        if 16.12 <= t < 16.22 or t >= 19.0:
             break
         if t >= 3.0:
             put(bass_note(root + (12 if int(round(t / (BEAT / 2))) % 2 else 0) * 0, BEAT / 2), t + BEAT / 4, 0.9, 0, 0)
@@ -260,60 +260,73 @@ for (a, b, notes, root) in CHORDS:
     t = a
     i = 0
     while t < b - 1e-6:
-        if (t >= 1.0 and (t >= 6.0 or i % 2 == 0)) and not (16.9 <= t < 17.0) and t < 19.2:
+        if (t >= 1.0 and (t >= 6.0 or i % 2 == 0)) and not (16.12 <= t < 16.22) and t < 19.2:
             m = tones[arp_pattern[i % 8] % len(tones)] + 12
             put(pluck(mtof(m), 0.35, 1.2 if t >= 6 else 0.8), t, 0.16 if t >= 6 else 0.11, (-0.5 if i % 2 else 0.5), 0.35)
         t += BEAT / 4; i += 1
 
 # ------------------------------------------------------------------ sound design (synced to picture)
-whoosh(0.35, 200, 3000, 0.25, 0.9, t0=-0.05)      # into logo
-impact(0.28, 0.55); shimmer(0.3, 1.0, 0.05)
-whoosh(0.9, 180, 2500, 0.28, 0.5, t0=1.0)         # laptop rises
-whoosh(0.8, 300, 4000, 0.22, 0.5, t0=1.3)         # phone slides in
-for t in (1.62, 1.75, 1.9, 2.02):
-    click(t, 0.16, 0.2)
-whoosh(0.7, 250, 6000, 0.45, 0.55, t0=2.62)       # scene 1 -> 2 streak
-blip(1400, 0.08, 0.12, 3.02, 0, 0.3, 1.5)
-for t, pn in ((3.45, -0.5), (3.55, 0.5), (3.6, -0.4), (3.75, -0.5), (3.9, 0.5)):
-    pop(t, 700 + 200 * (pn > 0), 0.24, pn)
-click(4.6, 0.5, -0.2)                               # mouse click
-blip(3200, 0.04, 0.1, 4.62, -0.2, 0.3)
-whoosh(0.7, 800, 3000, 0.12, 0.5, t0=4.8, pan_sweep=False)  # scroll
-whoosh(0.75, 150, 7000, 0.6, 0.75, t0=5.3)        # dive into the screen
-impact(5.9, 0.35)
-for i, t in enumerate(np.arange(5.95, 6.7, 0.1)):
-    click(t, 0.1, -0.4 + 0.1 * i)
-for t, pn in ((7.2, -0.6), (7.4, 0.6), (7.6, 0.5)):
-    pop(t, 820, 0.24, pn)
-digital(7.8, 0.09, 0.0, 8)
-click(8.3, 0.3, 0.5); click(8.6, 0.3, 0.5)
-digital(8.9, 0.05, 0.3, 4, 3400)
-whoosh(0.8, 300, 5000, 0.45, 0.6, t0=9.25)        # scene 3 -> 4
-impact(9.9, 0.3)
-for t, pn in ((10.35, 0), (10.5, -0.6), (10.62, 0.6)):
-    whoosh(0.45, 300, 3500, 0.16, 0.4, t0=t - 0.1, pan_sweep=False)
-pop(10.8, 420, 0.35, 0)                            # hub
-digital(11.0, 0.08, 0.0, 10, 2200)
-for i in range(3):
-    pop(11.0 + i * 0.12, 1100 + i * 150, 0.14, (-0.5, 0.5, 0)[i])
-digital(12.4, 0.04, -0.3, 5, 3000); digital(13.1, 0.04, 0.3, 5, 3000)
-whoosh(0.7, 300, 6500, 0.45, 0.6, t0=13.45)       # scene 4 -> 5
-for k in range(6):                                  # kinetic words
-    t = 14.05 + k * 0.47
+# scene 1: seed shape -> wireframe -> website
+pop(0.05, 1200, 0.22, 0)                            # geometric seed appears
+whoosh(0.6, 250, 3500, 0.22, 0.6, t0=0.3)           # shape stretches into a window
+whoosh(0.4, 500, 5000, 0.12, 0.5, t0=0.18, pan_sweep=False)   # headline in
+for i in range(8):                                   # wireframe blocks ticking in
+    click(0.74 + i * 0.035, 0.08, -0.4 + i * 0.1)
+digital(1.3, 0.06, 0.0, 8, 2800)                     # content fills
+impact(1.6, 0.35)                                    # "WUJUDKAN JADI WEBSITE."
+whoosh(0.4, 500, 5000, 0.14, 0.5, t0=1.5, pan_sweep=False)
+# scene 2: exploded layers, selections, reassemble, dock
+whoosh(1.0, 150, 3000, 0.32, 0.55, t0=2.95)
+impact(3.2, 0.25)
+for t, pn in ((3.95, -0.3), (4.35, 0.2), (4.7, 0.4)):
+    click(t, 0.3, pn); blip(2600, 0.04, 0.08, t + 0.02, pn, 0.3)
+pop(4.5, 700, 0.18, 0.2)
+whoosh(0.8, 3000, 250, 0.26, 0.5, t0=5.0)           # collapse back
+pop(5.9, 420, 0.3, 0)                                # docks into the laptop
+# scene 3: service carousel
+for t in (6.66, 7.5, 8.35, 9.2, 10.0, 10.82):
+    whoosh(0.5, 300, 4500, 0.3, 0.5, t0=t - 0.05)
+    blip(mtof(88), 0.08, 0.06, t + 0.2, 0.2, 0.4)
+whoosh(0.5, 900, 2500, 0.08, 0.5, t0=6.3, pan_sweep=False)   # site scroll
+click(7.28, 0.35, 0.3); pop(7.33, 1000, 0.2, 0.3); pop(7.4, 1300, 0.15, 0.3)   # add to cart
+digital(7.65, 0.05, -0.2, 6, 3000)                   # charts draw
+pop(8.08, 900, 0.2, 0.5); blip(1800, 0.1, 0.08, 8.1, 0.5, 0.3)   # notification
+for k in range(4):                                   # typing "Dewi"
+    click(8.72 + k * 0.09, 0.14, -0.2)
+blip(2200, 0.06, 0.06, 9.14, 0, 0.3)
+click(9.64, 0.28, -0.2); pop(10.13, 600, 0.26, 0.3)  # drag and drop
+click(10.74, 0.3, 0)                                 # CTA press
+# scene 4: responsive
+for t in (11.12, 11.8, 12.46, 13.13):
     whoosh(0.3, 600, 5000, 0.14, 0.5, t0=t - 0.12, pan_sweep=False)
-    blip(mtof(84 + [0, 2, 4, 7, 9, 12][k]), 0.12, 0.10, t + 0.08, (-0.3, 0.3)[k % 2], 0.4)
-riser(15.6, 1.3, 0.35)
-whoosh(0.5, 200, 8000, 0.4, 0.8, t0=16.55)
-impact(17.0, 1.0); shimmer(17.05, 1.4, 0.06, 81)
-pop(17.75, 600, 0.3, 0); pop(18.05, 900, 0.22, -0.3); pop(18.3, 700, 0.3, 0.2)
-click(18.3, 0.2, 0.2)
-shimmer(18.55, 0.8, 0.05, 88); blip(mtof(96), 0.4, 0.05, 18.95, 0.4, 0.7)
+for k, t in enumerate((11.14, 11.82, 12.48, 13.15, 13.82)):
+    blip(mtof(84 + [0, 2, 4, 7, 12][k]), 0.14, 0.09, t + 0.06, (-0.3, 0.3)[k % 2], 0.4)
+click(11.45, 0.2, 0.5)
+whoosh(0.7, 1200, 2200, 0.08, 0.5, t0=11.5, pan_sweep=False)  # dragging the window edge
+whoosh(0.6, 1200, 2200, 0.08, 0.5, t0=12.3, pan_sweep=False)
+pop(12.98, 500, 0.24, 0.3)                           # becomes a phone
+whoosh(0.8, 200, 3000, 0.25, 0.5, t0=13.1)           # pull back to three devices
+whoosh(0.35, 1500, 4500, 0.1, 0.5, t0=13.93, pan_sweep=False)  # mobile menu
+click(14.2, 0.18, -0.4); click(14.5, 0.22, 0.2)
+# scene 5: screens assemble -> logo
+whoosh(0.9, 180, 4000, 0.4, 0.55, t0=14.9)
+for i in range(6):
+    pop(15.05 + i * 0.06, 700 + i * 90, 0.12, (-0.5, 0.5)[i % 2])
+riser(15.35, 0.85, 0.3)
+whoosh(0.4, 4000, 200, 0.3, 0.5, t0=15.9, pan_sweep=False)
+impact(16.22, 0.9); shimmer(16.3, 1.2, 0.05, 81)
+whoosh(0.5, 400, 4000, 0.12, 0.5, t0=16.36, pan_sweep=False)
+# scene 6: CTA
+whoosh(0.6, 300, 3500, 0.2, 0.5, t0=17.3)
+pop(17.55, 700, 0.18, 0); pop(17.9, 900, 0.14, -0.2)
+pop(18.05, 600, 0.28, 0); click(18.05, 0.15, 0)
+shimmer(18.45, 0.8, 0.045, 88); blip(mtof(96), 0.4, 0.05, 18.9, 0.4, 0.7)
 
 # ------------------------------------------------------------------ mix
 # side-chain duck on the music bus (approximation: duck everything except the kick itself is fine at this level)
 duck = 1 - 0.45 * np.clip(signal.lfilter([1], [1, -0.0], duck_src), 0, 1)
 # short pre-drop gap before the final impact
-gap = np.ones(N); g0, g1 = int(16.9 * SR), int(17.0 * SR)
+gap = np.ones(N); g0, g1 = int(16.12 * SR), int(16.22 * SR)
 gap[g0:g1] = 0.08; gap[g0 - 480:g0] = np.linspace(1, 0.08, 480)
 L *= duck * gap; Rr *= duck * gap
 revL *= gap; revR *= gap
